@@ -13,4 +13,5 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Configure API_BASE_URL for server-side requests and NEXT_PUBLIC_API_BASE_URL for browser requests. Build with npm run build; run the production server with npm run start.
+Configure `API_BASE_URL` for server-side requests and `NEXT_PUBLIC_API_BASE_URL` for browser requests. Build with `npm run build`; run the production server with `npm run start`.
+
