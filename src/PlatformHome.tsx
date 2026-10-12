@@ -80,6 +80,7 @@ type PublicPlan = {
   trial_days: number;
   max_locations: number | null;
   features: string[];
+  entitlements?: { key: string; name: string; enabled: boolean; value: number | null; unlimited: boolean; public_label?: string }[];
   active: boolean;
 };
 const publicPlanView = (plan: PublicPlan): Extract<Block, { type: "pricing" }>["plans"][number] => ({
@@ -87,8 +88,8 @@ const publicPlanView = (plan: PublicPlan): Extract<Block, { type: "pricing" }>["
   price: plan.price_cents === 0 ? "Custom" : new Intl.NumberFormat("en-CA", { style: "currency", currency: plan.currency }).format(plan.price_cents / 100),
   per: plan.price_cents === 0 ? "" : `/${plan.interval}`,
   text: plan.description,
-  locations: plan.max_locations === null ? "Unlimited locations" : `${plan.max_locations} location${plan.max_locations === 1 ? "" : "s"}`,
-  features: plan.features,
+  locations: (() => { const limit = plan.entitlements?.find((item) => item.key === "limit.locations"); const maximum = limit ? (limit.unlimited ? null : limit.value) : plan.max_locations; return maximum === null ? "Unlimited locations" : `${maximum} location${maximum === 1 ? "" : "s"}`; })(),
+  features: plan.features.length ? plan.features : (plan.entitlements || []).filter((item) => item.enabled && item.key !== "limit.locations").map((item) => item.public_label || item.name),
   cta: plan.price_cents === 0 ? { label: "Talk to sales", href: "/contact" } : demo,
   featured: plan.code === "clinic",
 });
