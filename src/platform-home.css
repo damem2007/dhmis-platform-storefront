@@ -163,6 +163,9 @@ html,body{margin:0;min-height:100%}
 .platform-home .plan.hot .btn{background:var(--coral);border-color:var(--coral);color:var(--on-coral)!important}
 .platform-home .plan ul{padding-left:1.1em;flex:1}
 .platform-home .plan p{margin:0 0 12px}
+.platform-home .plan-locations{font-size:.95rem;color:var(--coral);letter-spacing:.01em}
+.platform-home .plan.hot .plan-locations{color:var(--mint)}
+.platform-home .plan-entitlements{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.72}
 .platform-home .price{font:800 2.8rem var(--f-display),sans-serif;letter-spacing:-.04em}
 .platform-home .price small{font-size:1rem;font-weight:400}
 .platform-home .pop{position:absolute;top:-12px;right:20px;background:var(--coral);color:var(--on-coral);border-radius:999px;padding:2px 12px;font-size:.8rem;font-weight:600}

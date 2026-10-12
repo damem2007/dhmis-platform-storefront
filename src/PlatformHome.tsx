@@ -18,7 +18,7 @@ type Block = Base & (
   | { type: "steps"; title: string; items: { title: string; text: string; status: St }[] }
   | { type: "compare"; title: string; cols: string[]; rows: string[][] }
   | { type: "roi"; title: string; assumption: number }
-  | { type: "pricing"; title: string; plans: { name: string; price: string; per: string; text: string; features: string[]; cta: Link; featured?: boolean }[] }
+  | { type: "pricing"; title: string; plans: { name: string; price: string; per: string; text: string; locations: string; features: string[]; cta: Link; featured?: boolean }[] }
   | { type: "faq"; title: string; items: { q: string; a: string }[] }
   | { type: "resources"; title: string; items: { title: string; links: Link[]; more: Link }[] }
   | { type: "text"; title: string; paragraphs: string[] }
@@ -66,10 +66,32 @@ const site: Site = {
 
 const demo = { label: "Start free trial", href: "/contact" };
 const PLANS: Extract<Block, { type: "pricing" }>["plans"] = [
-  { name: "Solo", price: "$99", per: "/month", text: "One dentist, one location.", features: ["Charting and treatment plans", "Recalls and reminders", "Patient portal"], cta: demo },
-  { name: "Clinic", price: "$299", per: "/month", text: "Up to 8 providers.", features: ["Everything in Solo", "Billing and claims", "Reports and analytics"], cta: demo, featured: true },
-  { name: "Group", price: "Custom", per: "", text: "Multiple locations.", features: ["Everything in Clinic", "SSO and audit log", "API, webhooks and sandbox"], cta: { label: "Talk to sales", href: "/contact" } },
+  { name: "Solo", price: "$99", per: "/month", text: "For one dentist and one location.", locations: "1 location", features: ["Charting and treatment plans", "Recalls and reminders", "Patient portal"], cta: demo },
+  { name: "Clinic", price: "$299", per: "/month", text: "For growing teams across up to three locations.", locations: "Up to 3 locations", features: ["Everything in Solo", "Billing and claims", "Reports and analytics"], cta: demo, featured: true },
+  { name: "Group", price: "Custom", per: "", text: "For multi-location organizations.", locations: "Unlimited locations", features: ["Everything in Clinic", "SSO and audit log", "API, webhooks and sandbox"], cta: { label: "Talk to sales", href: "/contact" } },
 ];
+type PublicPlan = {
+  code: string;
+  name: string;
+  description: string;
+  price_cents: number;
+  currency: string;
+  interval: string;
+  trial_days: number;
+  max_locations: number | null;
+  features: string[];
+  active: boolean;
+};
+const publicPlanView = (plan: PublicPlan): Extract<Block, { type: "pricing" }>["plans"][number] => ({
+  name: plan.name,
+  price: plan.price_cents === 0 ? "Custom" : new Intl.NumberFormat("en-CA", { style: "currency", currency: plan.currency }).format(plan.price_cents / 100),
+  per: plan.price_cents === 0 ? "" : `/${plan.interval}`,
+  text: plan.description,
+  locations: plan.max_locations === null ? "Unlimited locations" : `${plan.max_locations} location${plan.max_locations === 1 ? "" : "s"}`,
+  features: plan.features,
+  cta: plan.price_cents === 0 ? { label: "Talk to sales", href: "/contact" } : demo,
+  featured: plan.code === "clinic",
+});
 const FAQS = [
   { q: "Can we import our existing records?", a: "Yes. We import patients, appointments and charts from spreadsheets, paper registers or your current system before you go live." },
   { q: "How long does setup take?", a: "Most clinics are live within two weeks, and training for your team is included." },
@@ -342,7 +364,7 @@ function BlockView({ b, first }: { b: Block; first: boolean }) {
           <div className="grid3">{b.plans.map((p) => (
             <article key={p.name} className={p.featured ? "plan hot" : "plan"}>
               {p.featured && <span className="pop">Most popular</span>}
-              <h3>{p.name}</h3><p className="price">{p.price}<small>{p.per}</small></p><p>{p.text}</p>
+              <h3>{p.name}</h3><p className="price">{p.price}<small>{p.per}</small></p><p>{p.text}</p><p className="plan-locations"><strong>{p.locations}</strong></p><p className="plan-entitlements">Included features</p>
               <ul>{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
               <Lk className={p.featured ? "btn" : "btn ghost"} href={p.cta.href}>{p.cta.label}</Lk>
             </article>))}</div><Tail b={b} /></section>
@@ -479,8 +501,26 @@ type Props = { site?: Site; theme?: Theme; pages?: Page[]; articles?: Article[] 
 export default function PlatformHome({ site = defaults.site, theme = defaults.theme, pages = defaults.pages, articles = defaults.articles }: Props) {
   const [s = "", slug] = useRoute();
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
-  const home = pages.find((p) => p.slug === "home");
-  const page = pages.find((p) => p.slug === s);
+  const [livePlans, setLivePlans] = useState<Extract<Block, { type: "pricing" }>["plans"] | null>(null);
+  useEffect(() => {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+    if (!base) return;
+    fetch(`${base}/v1/public/platform/plans`)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Plan catalogue unavailable")))
+      .then((payload: unknown) => {
+        if (!Array.isArray(payload)) return;
+        const plans = payload
+          .filter((value): value is PublicPlan => Boolean(value && typeof value === "object" && "code" in value && "name" in value))
+          .map(publicPlanView);
+        if (plans.length) setLivePlans(plans);
+      })
+      .catch(() => undefined);
+  }, []);
+  const renderedPages = livePlans
+    ? pages.map((page) => ({ ...page, blocks: page.blocks.map((block) => block.type === "pricing" ? { ...block, plans: livePlans } : block) }))
+    : pages;
+  const home = renderedPages.find((p) => p.slug === "home");
+  const page = renderedPages.find((p) => p.slug === s);
   const items = s === "kb" || s === "docs" ? articles.filter((a) => a.section === s) : [];
   const article = items.find((a) => a.slug === slug);
   const anchor = !page && s && s !== "kb" && s !== "docs" && home?.blocks.some((b) => b.id === s) ? s : "";
