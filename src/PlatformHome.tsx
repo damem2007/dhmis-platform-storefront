@@ -31,6 +31,7 @@ type Section = "kb" | "docs";
 type Article = { slug: string; section: Section; category: string; title: string; summary: string; body: string[]; code?: string };
 type Site = { name: string; tagline: string; nav: Link[]; resources: Link[]; primary: Link; footer: { title: string; links: Link[] }[] };
 type Theme = { light: Record<string, string>; dark: Record<string, string> };
+type ThemeMode = "system" | "light" | "dark";
 
 
 // ---------- Tooth shapes ----------
@@ -393,17 +394,25 @@ function Lk({ href, ...p }: { href: string } & Omit<ComponentProps<"a">, "href">
 // Theme tokens from the CMS become CSS variables scoped to this app only. Keys and values are validated.
 const KEY = /^[a-z0-9-]+$/, VAL = /^[#a-zA-Z0-9(),.%\s-]+$/;
 const vars = (m: Record<string, string>) => Object.entries(m).filter(([k, v]) => KEY.test(k) && VAL.test(v)).map(([k, v]) => `--${k}:${v}`).join(";");
-const themeCss = (t: Theme) => `.platform-home{${vars(t.light)}}@media(prefers-color-scheme:dark){.platform-home{${vars(t.dark)}}}`;
+const themeCss = (t: Theme) => `.platform-home{${vars(t.light)}}@media(prefers-color-scheme:dark){.platform-home{${vars(t.dark)}}}.platform-home[data-theme="light"]{${vars(t.light)}}.platform-home[data-theme="dark"]{${vars(t.dark)}}`;
 
-function Header({ site }: { site: Site }) {
+function Header({ site, themeMode, onThemeModeChange }: { site: Site; themeMode: ThemeMode; onThemeModeChange: (mode: ThemeMode) => void }) {
   const links = (l: Link[]) => l.map((n) => <Lk key={n.href} href={n.href}>{n.label}</Lk>);
   return (
     <header className="bar">
+      <a className="skip" href="#main-content">Skip to content</a>
       <Lk className="logo" href="/">{site.name}</Lk>
       <nav aria-label="Main">
         {links(site.nav)}
         <details className="dd d"><summary>Resources</summary><div>{links(site.resources)}</div></details>
         <details className="dd m"><summary>Menu</summary><div>{links([...site.nav, ...site.resources])}</div></details>
+        <label className="theme-control">Theme
+          <select aria-label="Colour theme" value={themeMode} onChange={(event) => onThemeModeChange(event.target.value as ThemeMode)}>
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
         <Lk className="btn" href={site.primary.href}>{site.primary.label}</Lk>
       </nav>
     </header>
@@ -469,6 +478,7 @@ type Props = { site?: Site; theme?: Theme; pages?: Page[]; articles?: Article[] 
 
 export default function PlatformHome({ site = defaults.site, theme = defaults.theme, pages = defaults.pages, articles = defaults.articles }: Props) {
   const [s = "", slug] = useRoute();
+  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const home = pages.find((p) => p.slug === "home");
   const page = pages.find((p) => p.slug === s);
   const items = s === "kb" || s === "docs" ? articles.filter((a) => a.section === s) : [];
@@ -491,11 +501,21 @@ export default function PlatformHome({ site = defaults.site, theme = defaults.th
 
   useEffect(() => installFormEnhancements(), []);
 
+  useEffect(() => {
+    const saved = window.localStorage.getItem("dhmis-platform-home-theme");
+    if (saved === "system" || saved === "light" || saved === "dark") setThemeMode(saved);
+  }, []);
+
+  const changeThemeMode = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    window.localStorage.setItem("dhmis-platform-home-theme", mode);
+  };
+
   return (
-    <div className="platform-home">
+    <div className="platform-home" data-theme={themeMode === "system" ? undefined : themeMode}>
       <style>{themeCss(theme)}</style>
-      <Header key={s + (slug ?? "")} site={site} />
-      <main>{view}</main>
+      <Header key={s + (slug ?? "")} site={site} themeMode={themeMode} onThemeModeChange={changeThemeMode} />
+      <main id="main-content">{view}</main>
       <Footer site={site} />
     </div>
   );

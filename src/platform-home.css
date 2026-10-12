@@ -1,3 +1,4 @@
+html,body{margin:0;min-height:100%}
 .platform-home{--f-display:"Bricolage Grotesque",system-ui,sans-serif;--f-body:"Instrument Sans",system-ui,sans-serif;--ink:#0c2b33;--paper:#f3f8f7;--mint:#cfebe3;--mint2:#e4f3ef;--coral:#c93a60;--on-coral:#ffffff;--blue:#2d5f8a;--amber:#e8b23a;--ok:#2fa58a;--line:#c9dcd7;--card:#ffffff;--tooth:#ffffff;--glow:rgba(228,87,122,.14)}
 @media(prefers-color-scheme:dark){.platform-home{--ink:#e6f4f0;--paper:#0a1b20;--mint:#1d4a4a;--mint2:#112d33;--coral:#ff7d9a;--on-coral:#0a1b20;--line:#27474b;--card:#10282e;--tooth:#e8f5f1;--glow:rgba(228,87,122,.2)}}
 .platform-home{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -29,6 +30,8 @@
 .platform-home .bar nav{display:flex;align-items:center;gap:6px}
 .platform-home .bar nav a{text-decoration:none;padding:6px 10px;font-size:.95rem}
 .platform-home .bar nav a.btn{padding:9px 18px}
+.platform-home .theme-control{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:.85rem;white-space:nowrap}
+.platform-home .theme-control select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 26px 6px 9px}
 .platform-home .dd{position:relative}
 .platform-home .dd summary{cursor:pointer;list-style:none;padding:6px 10px;font-size:.95rem}
 .platform-home .dd div{position:absolute;right:0;top:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;display:grid;min-width:190px;z-index:11;box-shadow:0 20px 40px -20px rgba(0,0,0,.35)}
@@ -36,6 +39,7 @@
 @media(max-width:700px){
   .platform-home .dd.m{display:block}
   .platform-home .dd.d,.platform-home .bar nav>a:not(.btn){display:none}
+  .platform-home .theme-control{font-size:.78rem}
 }
 .platform-home .btn{display:inline-block;background:var(--ink);color:var(--paper)!important;padding:13px 24px;border-radius:999px;text-decoration:none;font-weight:600;border:2px solid var(--ink);cursor:pointer;font:600 1rem var(--f-body),sans-serif;transition:transform .2s,background .2s}
 .platform-home .btn:hover{background:var(--coral);border-color:var(--coral);color:var(--on-coral)!important;transform:translateY(-2px)}
